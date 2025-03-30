@@ -1601,6 +1601,11 @@ pub const MouseMotionEvent = extern struct {
     yrel: i32,
 };
 
+pub const buttonleft: u8 = 1;
+pub const buttonmiddle: u8 = 2;
+pub const buttonright: u8 = 3;
+pub const buttonx1: u8 = 4;
+
 pub const MouseButtonEvent = extern struct {
     type: EventType,
     timestamp: u32,
@@ -1651,6 +1656,20 @@ pub const DropEvent = extern struct {
     window_id: WindowID,
 };
 
+pub const ControllerButtonEvent = extern struct {
+    type: EventType,
+    timestamp: u32,
+    which: JoystickID,
+    button: u8,
+    state: ReleasedOrPressed,
+    padding1: u8,
+    padding2: u8,
+
+    pub fn getButton(self: *ControllerButtonEvent) GameController.Button {
+        return @as(GameController.Button, @enumFromInt(self.button));
+    }
+};
+
 pub const ControllerDeviceEvent = extern struct {
     type: EventType,
     timestamp: u32,
@@ -1669,6 +1688,7 @@ pub const Event = extern union {
     motion: MouseMotionEvent,
     button: MouseButtonEvent,
     wheel: MouseWheelEvent,
+    controllerbutton: ControllerButtonEvent,
     controllerdevice: ControllerDeviceEvent,
     touch: TouchFingerEvent,
     quit: QuitEvent,
@@ -2238,6 +2258,11 @@ extern fn SDL_GetMouseFocus() ?*Window;
 pub const getMouseState = SDL_GetMouseState;
 extern fn SDL_GetMouseState(x: ?*i32, y: ?*i32) u32;
 
+pub fn setRelativeMouseMode(enabled: bool) Error!void {
+    if (SDL_SetRelativeMouseMode(@intFromBool(enabled)) < 0) return makeError();
+}
+extern fn SDL_SetRelativeMouseMode(enabled: c_int) c_int;
+
 const ShowCursorToggleOption = enum(c_int) { enable, disable, query };
 pub fn showCursor(toggle: ShowCursorToggleOption) Error!void {
     if (SDL_ShowCursor(toggle) < 0) return makeError();
@@ -2253,6 +2278,12 @@ pub const JoystickID = i32;
 
 pub const JOYSTICK_AXIS_MAX = 32767;
 pub const JOYSTICK_AXIS_MIN = -32768;
+
+/// Count the number of joysticks attached to the system.
+pub fn numJoysticks() u32 {
+    return @as(u32, @intCast(SDL_NumJoysticks()));
+}
+extern fn SDL_NumJoysticks() c_int;
 
 //--------------------------------------------------------------------------------------------------
 //
@@ -2295,7 +2326,14 @@ pub const GameController = opaque {
     pub const close = gameControllerClose;
     pub const getAxis = gameControllerGetAxis;
     pub const getButton = gameControllerGetButton;
+    pub const fromInstanceId = gameControllerFromInstanceId;
 };
+
+/// Check if the given joystick is supported by the game controller interface.
+pub fn isGameController(joystick_index: i32) bool {
+    return SDL_IsGameController(@as(c_int, @intCast(joystick_index)));
+}
+extern fn SDL_IsGameController(joystick_index: c_int) bool;
 
 /// Open a game controller for use.
 pub fn gameControllerOpen(joystick_index: c_int) Error!*GameController {
@@ -2324,6 +2362,12 @@ pub fn gameControllerGetButton(controller: *GameController, button: GameControll
     return (SDL_GameControllerGetButton(controller, @intFromEnum(button)) != 0);
 }
 extern fn SDL_GameControllerGetButton(controller: *GameController, button: c_int) u8;
+
+/// Get the SDL_GameController associated with an instance id.
+pub fn gameControllerFromInstanceId(joyid: JoystickID) Error!*GameController {
+    return SDL_GameControllerFromInstanceID(joyid) orelse return makeError();
+}
+extern fn SDL_GameControllerFromInstanceID(joyid: JoystickID) ?*GameController;
 
 //--------------------------------------------------------------------------------------------------
 //

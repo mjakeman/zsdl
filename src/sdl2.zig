@@ -1241,6 +1241,7 @@ pub const Surface = extern struct {
     pub const blit = blitSurface;
     pub const lock = lockSurface;
     pub const unlock = unlockSurface;
+    pub const createRgb = createRgbSurface;
 };
 
 /// Set the blend mode used for blit operations.
@@ -1288,6 +1289,12 @@ pub fn unlockSurface(surface: *Surface) void {
     SDL_UnlockSurface(surface);
 }
 extern fn SDL_UnlockSurface(surface: *Surface) void;
+
+/// Allocate a new RGB surface.
+pub fn createRgbSurface(flags: u32, width: i32, height: i32, depth: i32, rmask: u32, gmask: u32, bmask: u32, amask: u32) Error!*Surface {
+    return SDL_CreateRGBSurface(flags, width, height, depth, rmask, gmask, bmask, amask) orelse makeError();
+}
+extern fn SDL_CreateRGBSurface(flags: u32, width: i32, height: i32, depth: i32, rmask: u32, gmask: u32, bmask: u32, amask: u32) ?*Surface;
 
 //--------------------------------------------------------------------------------------------------
 //

@@ -1241,6 +1241,8 @@ pub const Surface = extern struct {
 
     pub const free = freeSurface;
     pub const blit = blitSurface;
+    pub const lock = lockSurface;
+    pub const unlock = unlockSurface;
 };
 
 /// Set the blend mode used for blit operations.
@@ -1276,6 +1278,18 @@ extern fn SDL_UpperBlit(
     dest_surface: *Surface,
     dest_rect: ?*const Rect,
 ) c_int;
+
+/// Set up a surface for directly accessing the pixels.
+pub fn lockSurface(surface: *Surface) Error!void {
+    if (SDL_LockSurface(surface) < 0) return makeError();
+}
+extern fn SDL_LockSurface(surface: *Surface) c_int;
+
+/// Release a surface after directly accessing the pixels.
+pub fn unlockSurface(surface: *Surface) void {
+    SDL_UnlockSurface(surface);
+}
+extern fn SDL_UnlockSurface(surface: *Surface) void;
 
 //--------------------------------------------------------------------------------------------------
 //

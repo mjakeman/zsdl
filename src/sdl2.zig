@@ -201,6 +201,7 @@ pub const Window = opaque {
     pub const getSurface = getWindowSurface;
     pub const getID = windowGetID;
     pub const getFlags = windowGetFlags;
+    pub const setGrab = windowSetGrab;
 };
 
 /// Create a window with the specified position, dimensions, and flags.
@@ -275,6 +276,12 @@ pub fn windowGetFlags(window: *Window) Window.Flags {
 }
 
 extern fn SDL_GetWindowFlags(window: *Window) Window.Flags;
+
+pub fn windowSetGrab(window: *Window, grabbed: bool) void {
+    SDL_SetWindowGrab(window, grabbed);
+}
+
+extern fn SDL_SetWindowGrab(window: *Window, grabbed: bool) void;
 
 /// Get the number of video drivers compiled into SDL.
 pub fn getNumVideoDrivers() Error!u16 {
